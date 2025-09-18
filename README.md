@@ -15,6 +15,7 @@ To run run:</br>
 `$ sudo make run`</br>
 </br>
 You can check that it works by running:</br>
-`$ python3 pickle/evil_pickle.py`</br>
-`$ python3 pickle/victim.py`</br>
+`$ cd pickle`</br>
+`$ python3 evil_pickle.py`</br>
+`$ python3 victim.py`</br>
 Which should trigger an alert written to analyzer's standard output.
