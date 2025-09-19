@@ -1,9 +1,9 @@
 # mlicious_pickles
-Dynamically scan pickles for malicious activities during deserialization using eBPF.
+Dynamically scan pickles for malicious activitiy during deserialization using eBPF.
 <br>
 <br>
 This PoC has been successfully tested on Ubuntu 24.04.3 LTS AMD64 (kernel version 6.14.0-29-generic).</br>
-The first production version is in active development as of 09.15.2025.
+The MVP version is in active development as of 09.19.2025.
 ## Installation
 To install run:</br>
 `$ git clone https://github.com/Tihmmm/mlicious_pickles.git`</br>
