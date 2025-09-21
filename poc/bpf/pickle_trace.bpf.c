@@ -11,6 +11,8 @@
 
 char LICENSE[] SEC("license") = "GPL";
 
+volatile const u32 target_pid = 0;
+
 struct pid_fd {
     u32 pid;
     s32 fd;
@@ -88,6 +90,11 @@ struct {
     __uint(max_entries, 1 << 24);
 } events SEC(".maps");
 
+
+static __inline bool is_target_pid(u32 pid) {
+    return (target_pid != 0 && pid == target_pid);
+}
+
 static __inline bool endswith_pkl(const char *s, struct pid_fd *key) {
     char buf[64];
     long n = bpf_probe_read_user_str(buf, sizeof(buf), s);
@@ -118,6 +125,10 @@ SEC("tracepoint/syscalls/sys_enter_openat")
 int tp_enter_openat(struct trace_event_raw_sys_enter *ctx) {
     u64 id = bpf_get_current_pid_tgid();
     u32 pid = id >> 32;
+    if (!is_target_pid) {
+        return 0;
+    }
+
     const char *filename = (const char *)ctx->args[1];
     if (!filename) return 0;
 
@@ -133,6 +144,10 @@ SEC("tracepoint/syscalls/sys_exit_openat")
 int tp_exit_openat(struct trace_event_raw_sys_exit *ctx) {
     u64 id = bpf_get_current_pid_tgid();
     u32 pid = id >> 32;
+    if (!is_target_pid) {
+        return 0;
+    }
+
     s64 fd = ctx->ret;
     if (fd < 0) {
         bpf_map_delete_elem(&open_tmp, &pid);
@@ -160,6 +175,9 @@ SEC("tracepoint/syscalls/sys_enter_read")
 int tp_enter_read(struct trace_event_raw_sys_enter *ctx) {
     u64 id = bpf_get_current_pid_tgid();
     u32 pid = id >> 32;
+    if (!is_target_pid) {
+        return 0;
+    }
 
     struct read_args ra = {
         .fd = (s32)ctx->args[0],
@@ -178,6 +196,10 @@ SEC("tracepoint/syscalls/sys_exit_read")
 int tp_exit_read(struct trace_event_raw_sys_exit *ctx) {
     u64 id = bpf_get_current_pid_tgid();
     u32 pid = id >> 32;
+    if (!is_target_pid) {
+        return 0;
+    }
+
     s64 ret = ctx->ret;
 
     struct read_args *ra = bpf_map_lookup_elem(&read_ctx, &pid);
@@ -225,6 +247,10 @@ SEC("tracepoint/syscalls/sys_enter_close")
 int tp_enter_close(struct trace_event_raw_sys_enter *ctx) {
     u64 id = bpf_get_current_pid_tgid();
     u32 pid = id >> 32;
+    if (!is_target_pid) {
+            return 0;
+    }
+
     s32 fd = (s32)ctx->args[0];
     bpf_map_update_elem(&close_fd, &pid, &fd, BPF_ANY);
 
@@ -235,6 +261,9 @@ SEC("tracepoint/syscalls/sys_exit_close")
 int tp_exit_close2(struct trace_event_raw_sys_exit *ctx) {
     u64 id = bpf_get_current_pid_tgid();
     u32 pid = id >> 32;
+    if (!is_target_pid) {
+        return 0;
+    }
 
     if (ctx->ret == 0) {
         s32 *fdp = bpf_map_lookup_elem(&close_fd, &pid);
