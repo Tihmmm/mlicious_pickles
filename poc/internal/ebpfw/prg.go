@@ -42,13 +42,11 @@ func NewEbpfPrg() (*EbpfPrg, error) {
 		return nil, err
 	}
 
-	streams := map[string]*streamBuf{}
-
 	return &EbpfPrg{
 		Objects:       &objs,
 		Links:         []link.Link{},
 		RingBufReader: rd,
-		Streams:       streams,
+		Streams:       map[string]*streamBuf{},
 		WorkerFunc:    DefaultWorkerFunc,
 	}, nil
 }
