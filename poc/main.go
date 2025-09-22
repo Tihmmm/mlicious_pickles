@@ -35,7 +35,6 @@ func main() {
 	prog.AttachTracepoint("syscalls", "sys_exit_read", objs.TpExitRead)
 	prog.AttachTracepoint("syscalls", "sys_enter_close", objs.TpEnterClose)
 	prog.AttachTracepoint("syscalls", "sys_exit_close", objs.TpExitClose2)
-	defer prog.Close()
 
 	analyzer, err := rules.NewYaraAnalyzer(*rulesPath)
 	if err != nil {
