@@ -3,18 +3,13 @@ package ebpfw
 import (
 	"bytes"
 	"context"
+	"errors"
 
 	"github.com/Tihmmm/mlicious_pickles/internal/rules"
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/link"
 	"github.com/cilium/ebpf/ringbuf"
 )
-
-type Prg interface {
-	AttachTracepoint(cat, name string, prog *ebpf.Program) error
-	Close() error
-	Worker(ctx context.Context, analyzer rules.Analyzer)
-}
 
 type EbpfPrg struct {
 	Objects       *PickleTraceObjects
@@ -51,7 +46,7 @@ func NewEbpfPrg() (*EbpfPrg, error) {
 	}, nil
 }
 
-func (e *EbpfPrg) AttachTracepoint(cat, name string, prog *ebpf.Program) error {
+func AttachTracepoint(e *EbpfPrg, cat, name string, prog *ebpf.Program) error {
 	l, err := link.Tracepoint(cat, name, prog, nil)
 	if err != nil {
 		return err
@@ -63,23 +58,30 @@ func (e *EbpfPrg) AttachTracepoint(cat, name string, prog *ebpf.Program) error {
 }
 
 func (e *EbpfPrg) Close() error {
-	if err := e.Objects.Close(); err != nil {
-		return err
+	if e == nil {
+		return nil
 	}
 
-	for _, l := range e.Links {
-		if err := l.Close(); err != nil {
-			return err
+	var err error
+	if e.Objects != nil {
+		err = errors.Join(err, e.Objects.Close())
+		e.Objects = nil
+	}
+
+	if e.Links != nil {
+		for _, l := range e.Links {
+			err = errors.Join(err, l.Close())
 		}
+		e.Links = nil
 	}
 
-	if err := e.RingBufReader.Close(); err != nil {
-		return err
+	if e.RingBufReader != nil {
+		err = errors.Join(err, e.RingBufReader.Close())
 	}
 
 	return nil
 }
 
-func (e *EbpfPrg) Worker(ctx context.Context, analyzer rules.Analyzer) {
+func Worker(e *EbpfPrg, ctx context.Context, analyzer rules.Analyzer) {
 	e.WorkerFunc(e, ctx, analyzer)
 }
