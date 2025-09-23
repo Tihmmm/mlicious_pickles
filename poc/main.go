@@ -22,19 +22,19 @@ func main() {
 		log.Fatalf("memlock: %v\n", err)
 	}
 
-	prog, err := ebpfw.NewEbpfPrg()
+	e, err := ebpfw.NewEbpfPrg()
 	if err != nil {
 		log.Fatalf("ebpf program: %v", err)
 	}
-	objs := prog.Objects
-	defer prog.Close()
+	objs := e.Objects
+	defer ebpfw.Close(e)
 
-	prog.AttachTracepoint("syscalls", "sys_enter_openat", objs.TpEnterOpenat)
-	prog.AttachTracepoint("syscalls", "sys_exit_openat", objs.TpExitOpenat)
-	prog.AttachTracepoint("syscalls", "sys_enter_read", objs.TpEnterRead)
-	prog.AttachTracepoint("syscalls", "sys_exit_read", objs.TpExitRead)
-	prog.AttachTracepoint("syscalls", "sys_enter_close", objs.TpEnterClose)
-	prog.AttachTracepoint("syscalls", "sys_exit_close", objs.TpExitClose2)
+	ebpfw.AttachTracepoint(e, "syscalls", "sys_enter_openat", objs.TpEnterOpenat)
+	ebpfw.AttachTracepoint(e, "syscalls", "sys_exit_openat", objs.TpExitOpenat)
+	ebpfw.AttachTracepoint(e, "syscalls", "sys_enter_read", objs.TpEnterRead)
+	ebpfw.AttachTracepoint(e, "syscalls", "sys_exit_read", objs.TpExitRead)
+	ebpfw.AttachTracepoint(e, "syscalls", "sys_enter_close", objs.TpEnterClose)
+	ebpfw.AttachTracepoint(e, "syscalls", "sys_exit_close", objs.TpExitClose2)
 
 	analyzer, err := rules.NewYaraAnalyzer(*rulesPath)
 	if err != nil {
@@ -46,5 +46,5 @@ func main() {
 	defer cancel()
 
 	log.Printf("MLiciousPickles started.\n")
-	prog.Worker(ctx, analyzer)
+	ebpfw.Worker(e, ctx, analyzer)
 }

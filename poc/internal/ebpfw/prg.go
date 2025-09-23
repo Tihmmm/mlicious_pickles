@@ -10,12 +10,6 @@ import (
 	"github.com/cilium/ebpf/ringbuf"
 )
 
-type Prg interface {
-	AttachTracepoint(cat, name string, prog *ebpf.Program) error
-	Close() error
-	Worker(ctx context.Context, analyzer rules.Analyzer)
-}
-
 type EbpfPrg struct {
 	Objects       *PickleTraceObjects
 	Links         []link.Link
@@ -51,7 +45,7 @@ func NewEbpfPrg() (*EbpfPrg, error) {
 	}, nil
 }
 
-func (e *EbpfPrg) AttachTracepoint(cat, name string, prog *ebpf.Program) error {
+func AttachTracepoint(e *EbpfPrg, cat, name string, prog *ebpf.Program) error {
 	l, err := link.Tracepoint(cat, name, prog, nil)
 	if err != nil {
 		return err
@@ -62,7 +56,7 @@ func (e *EbpfPrg) AttachTracepoint(cat, name string, prog *ebpf.Program) error {
 	return nil
 }
 
-func (e *EbpfPrg) Close() error {
+func Close(e *EbpfPrg) error {
 	if err := e.Objects.Close(); err != nil {
 		return err
 	}
@@ -80,6 +74,6 @@ func (e *EbpfPrg) Close() error {
 	return nil
 }
 
-func (e *EbpfPrg) Worker(ctx context.Context, analyzer rules.Analyzer) {
+func Worker(e *EbpfPrg, ctx context.Context, analyzer rules.Analyzer) {
 	e.WorkerFunc(e, ctx, analyzer)
 }
