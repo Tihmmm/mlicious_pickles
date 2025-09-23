@@ -4,7 +4,10 @@ Dynamically scan pickles for malicious activitiy during deserialization using eB
 <br>
 This PoC has been successfully tested on Ubuntu 24.04.3 LTS AMD64 (kernel version 6.14.0-29-generic).</br>
 The MVP version is in active development as of 09.22.2025.
-## Installation
+### HLD
+<img src="docs/arch/HLD.png">
+
+### Installation
 To install run:</br>
 `$ git clone https://github.com/Tihmmm/mlicious_pickles.git`</br>
 `$ cd mlicious_pickles/poc`</br>
