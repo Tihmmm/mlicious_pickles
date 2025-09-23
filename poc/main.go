@@ -27,7 +27,7 @@ func main() {
 		log.Fatalf("ebpf program: %v", err)
 	}
 	objs := e.Objects
-	defer ebpfw.Close(e)
+	defer e.Close()
 
 	ebpfw.AttachTracepoint(e, "syscalls", "sys_enter_openat", objs.TpEnterOpenat)
 	ebpfw.AttachTracepoint(e, "syscalls", "sys_exit_openat", objs.TpExitOpenat)

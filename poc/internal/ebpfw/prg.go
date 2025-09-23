@@ -3,6 +3,7 @@ package ebpfw
 import (
 	"bytes"
 	"context"
+	"errors"
 
 	"github.com/Tihmmm/mlicious_pickles/internal/rules"
 	"github.com/cilium/ebpf"
@@ -56,19 +57,26 @@ func AttachTracepoint(e *EbpfPrg, cat, name string, prog *ebpf.Program) error {
 	return nil
 }
 
-func Close(e *EbpfPrg) error {
-	if err := e.Objects.Close(); err != nil {
-		return err
+func (e *EbpfPrg) Close() error {
+	if e == nil {
+		return nil
 	}
 
-	for _, l := range e.Links {
-		if err := l.Close(); err != nil {
-			return err
+	var err error
+	if e.Objects != nil {
+		err = errors.Join(err, e.Objects.Close())
+		e.Objects = nil
+	}
+
+	if e.Links != nil {
+		for _, l := range e.Links {
+			err = errors.Join(err, l.Close())
 		}
+		e.Links = nil
 	}
 
-	if err := e.RingBufReader.Close(); err != nil {
-		return err
+	if e.RingBufReader != nil {
+		err = errors.Join(err, e.RingBufReader.Close())
 	}
 
 	return nil

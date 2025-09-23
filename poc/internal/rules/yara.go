@@ -42,7 +42,13 @@ func (a *YaraAnalyzer) Analyze(data []byte) (*ScanResult, error) {
 }
 
 func (a *YaraAnalyzer) Close() error {
-	a.Rules.Destroy()
+	if a == nil {
+		return nil
+	}
+
+	if a.Rules != nil {
+		a.Rules.Destroy()
+	}
 
 	return nil
 }
