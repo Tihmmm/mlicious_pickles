@@ -79,7 +79,7 @@ func (e *EbpfPrg) Close() error {
 		err = errors.Join(err, e.RingBufReader.Close())
 	}
 
-	return nil
+	return err
 }
 
 func Worker(e *EbpfPrg, ctx context.Context, analyzer rules.Analyzer) {
