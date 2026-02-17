@@ -108,14 +108,12 @@ struct {
 
 // Helpers
 
-static __always_inline int pid_tracked(void)
-{
+static __always_inline int pid_tracked(void) {
     __u32 pid = bpf_get_current_pid_tgid() >> 32;
     return bpf_map_lookup_elem(&target_pids, &pid) != NULL;
 }
 
-static __always_inline void fill_header(struct event_header *hdr, __u32 type)
-{
+static __always_inline void fill_header(struct event_header *hdr, __u32 type) {
     __u64 pid_tgid = bpf_get_current_pid_tgid();
     hdr->pid          = pid_tgid >> 32;
     hdr->tid          = (__u32)pid_tgid;
@@ -128,8 +126,7 @@ static __always_inline void fill_header(struct event_header *hdr, __u32 type)
 
 // execve
 SEC("tracepoint/syscalls/sys_enter_execve")
-int tracepoint_sys_enter_execve(struct trace_event_raw_sys_enter *ctx)
-{
+int tracepoint_sys_enter_execve(struct trace_event_raw_sys_enter *ctx) {
     if (!pid_tracked())
         return 0;
 
@@ -165,8 +162,7 @@ int tracepoint_sys_enter_execve(struct trace_event_raw_sys_enter *ctx)
 
 // openat
 SEC("tracepoint/syscalls/sys_enter_openat")
-int tracepoint_sys_enter_openat(struct trace_event_raw_sys_enter *ctx)
-{
+int tracepoint_sys_enter_openat(struct trace_event_raw_sys_enter *ctx) {
     if (!pid_tracked())
         return 0;
 
@@ -187,8 +183,7 @@ int tracepoint_sys_enter_openat(struct trace_event_raw_sys_enter *ctx)
 
 // connect
 SEC("tracepoint/syscalls/sys_enter_connect")
-int tracepoint_sys_enter_connect(struct trace_event_raw_sys_enter *ctx)
-{
+int tracepoint_sys_enter_connect(struct trace_event_raw_sys_enter *ctx) {
     if (!pid_tracked())
         return 0;
 
@@ -223,8 +218,7 @@ int tracepoint_sys_enter_connect(struct trace_event_raw_sys_enter *ctx)
 
 // socket
 SEC("tracepoint/syscalls/sys_enter_socket")
-int tracepoint_sys_enter_socket(struct trace_event_raw_sys_enter *ctx)
-{
+int tracepoint_sys_enter_socket(struct trace_event_raw_sys_enter *ctx) {
     if (!pid_tracked())
         return 0;
 
@@ -245,8 +239,7 @@ int tracepoint_sys_enter_socket(struct trace_event_raw_sys_enter *ctx)
 
 // write
 SEC("tracepoint/syscalls/sys_enter_write")
-int tracepoint_sys_enter_write(struct trace_event_raw_sys_enter *ctx)
-{
+int tracepoint_sys_enter_write(struct trace_event_raw_sys_enter *ctx) {
     if (!pid_tracked())
         return 0;
 
@@ -266,8 +259,7 @@ int tracepoint_sys_enter_write(struct trace_event_raw_sys_enter *ctx)
 
 // unlinkat
 SEC("tracepoint/syscalls/sys_enter_unlinkat")
-int tracepoint_sys_enter_unlinkat(struct trace_event_raw_sys_enter *ctx)
-{
+int tracepoint_sys_enter_unlinkat(struct trace_event_raw_sys_enter *ctx) {
     if (!pid_tracked())
         return 0;
 
@@ -288,8 +280,7 @@ int tracepoint_sys_enter_unlinkat(struct trace_event_raw_sys_enter *ctx)
 
 // clone
 SEC("tracepoint/syscalls/sys_enter_clone")
-int tracepoint_sys_enter_clone(struct trace_event_raw_sys_enter *ctx)
-{
+int tracepoint_sys_enter_clone(struct trace_event_raw_sys_enter *ctx) {
     if (!pid_tracked())
         return 0;
 
@@ -309,25 +300,27 @@ int tracepoint_sys_enter_clone(struct trace_event_raw_sys_enter *ctx)
 
 // Process lifecycle tracking
 
-// Fires when any process forks. If the parent is tracked, add the child
-SEC("tracepoint/sched/sched_process_fork")
-int tracepoint_sched_process_fork(struct trace_event_raw_sched_process_fork *ctx)
-{
-    __u32 parent_pid = ctx->parent_pid;
-    __u32 child_pid  = ctx->child_pid;
+// Fires after clone() returns.
+// If the caller is tracked and a child was created (ret > 0), add the child PID to the tracking map
+SEC("tracepoint/syscalls/sys_exit_clone")
+int tracepoint_sys_exit_clone(struct trace_event_raw_sys_exit *ctx) {
+    __s64 ret = ctx->ret;
+    if (ret <= 0)
+        return 0;
 
+    __u32 parent_pid = bpf_get_current_pid_tgid() >> 32;
     if (bpf_map_lookup_elem(&target_pids, &parent_pid) == NULL)
         return 0;
 
+    __u32 child_pid = (__u32)ret;
     __u8 val = 1;
     bpf_map_update_elem(&target_pids, &child_pid, &val, BPF_ANY);
     return 0;
 }
 
-// Fires when a tracked process exits. Remove from map to keep it clean
-SEC("tracepoint/sched/sched_process_exit")
-int tracepoint_sched_process_exit(struct trace_event_raw_sched_process_template *ctx)
-{
+// Fires when a process calls exit_group(). Remove from tracking map
+SEC("tracepoint/syscalls/sys_enter_exit_group")
+int tracepoint_sys_enter_exit_group(struct trace_event_raw_sys_enter *ctx) {
     __u32 pid = bpf_get_current_pid_tgid() >> 32;
     bpf_map_delete_elem(&target_pids, &pid);
     return 0;

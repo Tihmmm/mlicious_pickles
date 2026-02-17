@@ -62,24 +62,14 @@ struct trace_event_raw_sys_enter {
 };
 
 /*
- * Tracepoint context for sched/sched_process_fork.
+ * Tracepoint context for syscalls/sys_exit_*.
+ * 'ret' carries the syscall return value.
  */
-struct trace_event_raw_sched_process_fork {
+struct trace_event_raw_sys_exit {
 	__u64 unused;
-	char  parent_comm[16];
-	__u32 parent_pid;
-	char  child_comm[16];
-	__u32 child_pid;
-};
-
-/*
- * Tracepoint context for sched/sched_process_exit (and similar sched events
- * that use the "template" format with a single comm+pid).
- */
-struct trace_event_raw_sched_process_template {
-	__u64 unused;
-	char  comm[16];
-	__u32 pid;
+	__s32 __padding;
+	__s32 id;
+	__s64 ret;
 };
 
 /*

@@ -44,8 +44,8 @@ func (l *Loader) Attach() (*ringbuf.Reader, error) {
 		{"syscalls", "sys_enter_write", l.objs.TracepointSysEnterWrite},
 		{"syscalls", "sys_enter_unlinkat", l.objs.TracepointSysEnterUnlinkat},
 		{"syscalls", "sys_enter_clone", l.objs.TracepointSysEnterClone},
-		{"sched", "sched_process_fork", l.objs.TracepointSchedProcessFork},
-		{"sched", "sched_process_exit", l.objs.TracepointSchedProcessExit},
+		{"syscalls", "sys_exit_clone", l.objs.TracepointSysExitClone},
+		{"syscalls", "sys_enter_exit_group", l.objs.TracepointSysEnterExitGroup},
 	}
 
 	for _, p := range progs {

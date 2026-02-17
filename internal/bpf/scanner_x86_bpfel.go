@@ -54,15 +54,15 @@ type ScannerSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type ScannerProgramSpecs struct {
-	TracepointSchedProcessExit *ebpf.ProgramSpec `ebpf:"tracepoint_sched_process_exit"`
-	TracepointSchedProcessFork *ebpf.ProgramSpec `ebpf:"tracepoint_sched_process_fork"`
-	TracepointSysEnterClone    *ebpf.ProgramSpec `ebpf:"tracepoint_sys_enter_clone"`
-	TracepointSysEnterConnect  *ebpf.ProgramSpec `ebpf:"tracepoint_sys_enter_connect"`
-	TracepointSysEnterExecve   *ebpf.ProgramSpec `ebpf:"tracepoint_sys_enter_execve"`
-	TracepointSysEnterOpenat   *ebpf.ProgramSpec `ebpf:"tracepoint_sys_enter_openat"`
-	TracepointSysEnterSocket   *ebpf.ProgramSpec `ebpf:"tracepoint_sys_enter_socket"`
-	TracepointSysEnterUnlinkat *ebpf.ProgramSpec `ebpf:"tracepoint_sys_enter_unlinkat"`
-	TracepointSysEnterWrite    *ebpf.ProgramSpec `ebpf:"tracepoint_sys_enter_write"`
+	TracepointSysEnterClone     *ebpf.ProgramSpec `ebpf:"tracepoint_sys_enter_clone"`
+	TracepointSysEnterConnect   *ebpf.ProgramSpec `ebpf:"tracepoint_sys_enter_connect"`
+	TracepointSysEnterExecve    *ebpf.ProgramSpec `ebpf:"tracepoint_sys_enter_execve"`
+	TracepointSysEnterExitGroup *ebpf.ProgramSpec `ebpf:"tracepoint_sys_enter_exit_group"`
+	TracepointSysEnterOpenat    *ebpf.ProgramSpec `ebpf:"tracepoint_sys_enter_openat"`
+	TracepointSysEnterSocket    *ebpf.ProgramSpec `ebpf:"tracepoint_sys_enter_socket"`
+	TracepointSysEnterUnlinkat  *ebpf.ProgramSpec `ebpf:"tracepoint_sys_enter_unlinkat"`
+	TracepointSysEnterWrite     *ebpf.ProgramSpec `ebpf:"tracepoint_sys_enter_write"`
+	TracepointSysExitClone      *ebpf.ProgramSpec `ebpf:"tracepoint_sys_exit_clone"`
 }
 
 // ScannerMapSpecs contains maps before they are loaded into the kernel.
@@ -120,28 +120,28 @@ type ScannerVariables struct {
 //
 // It can be passed to LoadScannerObjects or ebpf.CollectionSpec.LoadAndAssign.
 type ScannerPrograms struct {
-	TracepointSchedProcessExit *ebpf.Program `ebpf:"tracepoint_sched_process_exit"`
-	TracepointSchedProcessFork *ebpf.Program `ebpf:"tracepoint_sched_process_fork"`
-	TracepointSysEnterClone    *ebpf.Program `ebpf:"tracepoint_sys_enter_clone"`
-	TracepointSysEnterConnect  *ebpf.Program `ebpf:"tracepoint_sys_enter_connect"`
-	TracepointSysEnterExecve   *ebpf.Program `ebpf:"tracepoint_sys_enter_execve"`
-	TracepointSysEnterOpenat   *ebpf.Program `ebpf:"tracepoint_sys_enter_openat"`
-	TracepointSysEnterSocket   *ebpf.Program `ebpf:"tracepoint_sys_enter_socket"`
-	TracepointSysEnterUnlinkat *ebpf.Program `ebpf:"tracepoint_sys_enter_unlinkat"`
-	TracepointSysEnterWrite    *ebpf.Program `ebpf:"tracepoint_sys_enter_write"`
+	TracepointSysEnterClone     *ebpf.Program `ebpf:"tracepoint_sys_enter_clone"`
+	TracepointSysEnterConnect   *ebpf.Program `ebpf:"tracepoint_sys_enter_connect"`
+	TracepointSysEnterExecve    *ebpf.Program `ebpf:"tracepoint_sys_enter_execve"`
+	TracepointSysEnterExitGroup *ebpf.Program `ebpf:"tracepoint_sys_enter_exit_group"`
+	TracepointSysEnterOpenat    *ebpf.Program `ebpf:"tracepoint_sys_enter_openat"`
+	TracepointSysEnterSocket    *ebpf.Program `ebpf:"tracepoint_sys_enter_socket"`
+	TracepointSysEnterUnlinkat  *ebpf.Program `ebpf:"tracepoint_sys_enter_unlinkat"`
+	TracepointSysEnterWrite     *ebpf.Program `ebpf:"tracepoint_sys_enter_write"`
+	TracepointSysExitClone      *ebpf.Program `ebpf:"tracepoint_sys_exit_clone"`
 }
 
 func (p *ScannerPrograms) Close() error {
 	return _ScannerClose(
-		p.TracepointSchedProcessExit,
-		p.TracepointSchedProcessFork,
 		p.TracepointSysEnterClone,
 		p.TracepointSysEnterConnect,
 		p.TracepointSysEnterExecve,
+		p.TracepointSysEnterExitGroup,
 		p.TracepointSysEnterOpenat,
 		p.TracepointSysEnterSocket,
 		p.TracepointSysEnterUnlinkat,
 		p.TracepointSysEnterWrite,
+		p.TracepointSysExitClone,
 	)
 }
 
