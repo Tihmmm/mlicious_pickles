@@ -110,8 +110,7 @@ func (s *Scanner) Scan(ctx context.Context) (*analyzer.Report, error) {
 	<-eventsDone
 
 	// 8. Generate report.
-	report := az.Report()
-	return &report, nil
+	return new(az.Report()), nil
 }
 
 func decodeAndProcess[E any](data []byte, process func(*E)) error {
