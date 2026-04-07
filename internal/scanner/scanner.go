@@ -114,8 +114,33 @@ func (s *Scanner) Scan(ctx context.Context) (*analyzer.Report, error) {
 	return &report, nil
 }
 
+func decodeAndProcess[E any](data []byte, process func(*E)) error {
+	var e E
+	if err := binary.Read(bytes.NewReader(data), binary.LittleEndian, &e); err != nil {
+		return err
+	}
+	process(&e)
+	return nil
+}
+
+func makeHandler[E any](process func(*E)) func([]byte) error {
+	return func(data []byte) error {
+		return decodeAndProcess(data, process)
+	}
+}
+
 // collectEvents reads from the ring buffer and dispatches events to the analyzer
 func collectEvents(reader *ringbuf.Reader, az *analyzer.Analyzer) {
+	dispatch := map[events.EventType]func([]byte) error{
+		events.EventExecve:   makeHandler(az.ProcessExecve),
+		events.EventOpenat:   makeHandler(az.ProcessOpenat),
+		events.EventConnect:  makeHandler(az.ProcessConnect),
+		events.EventSocket:   makeHandler(az.ProcessSocket),
+		events.EventWrite:    makeHandler(az.ProcessWrite),
+		events.EventUnlinkat: makeHandler(az.ProcessUnlinkat),
+		events.EventClone:    makeHandler(az.ProcessClone),
+	}
+
 	for {
 		record, err := reader.Read()
 		if err != nil {
@@ -130,69 +155,15 @@ func collectEvents(reader *ringbuf.Reader, az *analyzer.Analyzer) {
 			continue
 		}
 
-		// Peek at the event type from the header
 		eventType := events.EventType(binary.LittleEndian.Uint32(record.RawSample[16:20]))
 
-		// https://www.youtube.com/watch?v=4K8IEzXnMYk
-		switch eventType {
-		case events.EventExecve:
-			var e events.ExecveEvent
-			if err := binary.Read(bytes.NewReader(record.RawSample), binary.LittleEndian, &e); err != nil {
-				log.Printf("decoding execve event: %v", err)
-				continue
-			}
-			az.ProcessExecve(&e)
-
-		case events.EventOpenat:
-			var e events.OpenatEvent
-			if err := binary.Read(bytes.NewReader(record.RawSample), binary.LittleEndian, &e); err != nil {
-				log.Printf("decoding openat event: %v", err)
-				continue
-			}
-			az.ProcessOpenat(&e)
-
-		case events.EventConnect:
-			var e events.ConnectEvent
-			if err := binary.Read(bytes.NewReader(record.RawSample), binary.LittleEndian, &e); err != nil {
-				log.Printf("decoding connect event: %v", err)
-				continue
-			}
-			az.ProcessConnect(&e)
-
-		case events.EventSocket:
-			var e events.SocketEvent
-			if err := binary.Read(bytes.NewReader(record.RawSample), binary.LittleEndian, &e); err != nil {
-				log.Printf("decoding socket event: %v", err)
-				continue
-			}
-			az.ProcessSocket(&e)
-
-		case events.EventWrite:
-			var e events.WriteEvent
-			if err := binary.Read(bytes.NewReader(record.RawSample), binary.LittleEndian, &e); err != nil {
-				log.Printf("decoding write event: %v", err)
-				continue
-			}
-			az.ProcessWrite(&e)
-
-		case events.EventUnlinkat:
-			var e events.UnlinkatEvent
-			if err := binary.Read(bytes.NewReader(record.RawSample), binary.LittleEndian, &e); err != nil {
-				log.Printf("decoding unlinkat event: %v", err)
-				continue
-			}
-			az.ProcessUnlinkat(&e)
-
-		case events.EventClone:
-			var e events.CloneEvent
-			if err := binary.Read(bytes.NewReader(record.RawSample), binary.LittleEndian, &e); err != nil {
-				log.Printf("decoding clone event: %v", err)
-				continue
-			}
-			az.ProcessClone(&e)
-
-		default:
+		handler, ok := dispatch[eventType]
+		if !ok {
 			log.Printf("unknown event type: %d", eventType)
+			continue
+		}
+		if err := handler(record.RawSample); err != nil {
+			log.Printf("decoding %s event: %v", eventType, err)
 		}
 	}
 }
